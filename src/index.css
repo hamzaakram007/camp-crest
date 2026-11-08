@@ -1,0 +1,63 @@
+:root {
+  --pine: #1b3a2f;
+  --moss: #3d6b4f;
+  --leaf: #5a8f6a;
+  --lake: #2a6f7a;
+  --lake-light: #4a9aab;
+  --wood: #8b5e3c;
+  --wood-dark: #5c3d26;
+  --ember: #e07A3d;
+  --ember-hot: #c45c4a;
+  --sun: #f0c75e;
+  --mist: #d4e4dc;
+  --fog: #e8f1ec;
+  --ink: #14241c;
+  --paper: #f4faf6;
+  --shadow: rgba(20, 36, 28, 0.28);
+  --radius: 18px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-ui: 'Nunito', system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--pine);
+  font-family: var(--font-ui);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 10% -10%, #2d5a45 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 100% 0%, #1e4a55 0%, transparent 50%),
+    linear-gradient(165deg, #1b3a2f 0%, #16352c 45%, #1a4550 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--sun);
+  outline-offset: 2px;
+}
