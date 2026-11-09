@@ -6,7 +6,7 @@
   --lake-light: #4a9aab;
   --wood: #8b5e3c;
   --wood-dark: #5c3d26;
-  --ember: #e07A3d;
+  --ember: #e07a3d;
   --ember-hot: #c45c4a;
   --sun: #f0c75e;
   --mist: #d4e4dc;
@@ -43,8 +43,9 @@ body {
   min-width: 320px;
   overflow-x: hidden;
   background:
-    radial-gradient(ellipse 120% 80% at 10% -10%, #2d5a45 0%, transparent 55%),
+    radial-gradient(ellipse 120% 80% at 8% -8%, #2d5a45 0%, transparent 55%),
     radial-gradient(ellipse 90% 70% at 100% 0%, #1e4a55 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(224, 122, 61, 0.12), transparent 55%),
     linear-gradient(165deg, #1b3a2f 0%, #16352c 45%, #1a4550 100%);
 }
 

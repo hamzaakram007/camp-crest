@@ -13,17 +13,39 @@ await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' })
 await page.evaluate(() => localStorage.clear())
 await page.reload({ waitUntil: 'networkidle' })
 
-ok('Welcome brand visible', await page.locator('.welcome-shell .brand').innerText() === 'Camp Crest')
+ok('Welcome brand visible', (await page.locator('.welcome-shell .brand').innerText()) === 'Camp Crest')
 
 await page.getByPlaceholder('Scout Sam').fill('Kit')
 await page.getByPlaceholder('Pine Hollow').fill('Fern Ridge')
 await page.getByRole('button', { name: 'Open my camp' }).click()
+await page.waitForSelector('.code-plaque')
+const code = await page.locator('.code-plaque strong').innerText()
+ok('Created screen shows friend code', /^[A-Z]+-\d{4}$/.test(code), code)
+
+await page.getByRole('button', { name: 'Copy friend code' }).click()
+await page.getByRole('button', { name: 'Enter campgrounds' }).click()
 await page.waitForSelector('.camp-grid')
-ok('Create camp enters map', await page.locator('h1').innerText() === 'Fern Ridge')
+ok('Enter campgrounds', (await page.locator('h1').innerText()) === 'Fern Ridge')
 
-const code = await page.locator('.code-pill strong').innerText()
-ok('Friend code generated', /^[A-Z]+-\d{4}$/.test(code), code)
+const shareUrl = await page.evaluate(() => {
+  const raw = localStorage.getItem('camp-crest-v2')
+  if (!raw) return null
+  const camp = JSON.parse(raw)
+  const pack = {
+    v: 2,
+    code: camp.friendCode,
+    name: camp.campName,
+    host: camp.camperName,
+    placed: camp.placed.map((p) => [p.itemId, p.x, p.y]),
+    unlocked: camp.unlocked,
+  }
+  const json = JSON.stringify(pack)
+  const b64 = btoa(json).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  return `${location.origin}/?join=${camp.friendCode}&pack=${b64}`
+})
+ok('Share URL built', Boolean(shareUrl && shareUrl.includes('pack=')), shareUrl?.slice(0, 80))
 
+await page.locator('.zone-filters button', { hasText: 'Cabin' }).click()
 await page.locator('.palette-item', { hasText: 'Lantern' }).click()
 const before = await page.locator('.tile.has-item').count()
 await page.locator('.tile:not(.has-item)').nth(8).click()
@@ -31,19 +53,32 @@ const after = await page.locator('.tile.has-item').count()
 ok('Place décor', after === before + 1)
 
 await page.getByRole('button', { name: 'Gather', exact: true }).click()
+const badgeBefore = await page.locator('.badge-pill strong').allTextContents()
 await page.locator('.tile.gatherable').first().click()
-const leaf = await page.locator('.badge-pill').nth(0).locator('strong').innerText()
-ok('Gather badge', Number(leaf) >= 1, `leaf=${leaf}`)
+const badgeAfter = await page.locator('.badge-pill strong').allTextContents()
+const gathered = badgeAfter.some((v, i) => Number(v) > Number(badgeBefore[i] ?? 0))
+ok('Gather badge', gathered, `before=${badgeBefore.join(',')} after=${badgeAfter.join(',')}`)
 
 await page.getByRole('button', { name: 'Show', exact: true }).click()
-await page.locator('.tile.has-item').nth(0).click()
-await page.locator('.tile.has-item').nth(1).click()
+// Prefer known showy seed props (campfire / lantern we placed)
+const showTiles = page.locator('.tile.has-item')
+const showCount = await showTiles.count()
+let picked = 0
+for (let i = 0; i < showCount && picked < 2; i++) {
+  const label = await showTiles.nth(i).getAttribute('aria-label')
+  if (label && /Campfire|Lantern|Camp Flag|Log Bench/.test(label)) {
+    await showTiles.nth(i).click()
+    picked++
+  }
+}
+ok('Picked show props', picked >= 2, `picked=${picked}`)
 await page.getByRole('button', { name: /Run evening show/ }).click()
 await page.waitForSelector('.show-shell')
-ok('Show starts', await page.locator('.show-shell').count() === 1)
+ok('Show starts', (await page.locator('.show-shell').count()) === 1)
+ok('Applause meter', (await page.locator('.applause-meter').count()) === 1)
 await page.getByRole('button', { name: 'Skip to camp' }).click()
 await page.waitForSelector('.camp-grid')
-ok('Return from show', await page.locator('.camp-grid').count() === 1)
+ok('Return from show', (await page.locator('.camp-grid').count()) === 1)
 
 await page.locator('.code-pill').click()
 await page.waitForSelector('.code-plaque')
@@ -55,8 +90,20 @@ ok('Simulate friend join', chips >= 2, `campers=${chips}`)
 await page.getByRole('button', { name: 'Back to camp' }).click()
 await page.getByRole('button', { name: 'New camp' }).click()
 await page.waitForSelector('.welcome-shell')
-await page.getByRole('tab', { name: 'Join with code' }).click()
+
+// Cross-browser-style join via pack URL
+await page.goto(shareUrl, { waitUntil: 'networkidle' })
+await page.waitForSelector('.welcome-shell')
+ok('Join tab from share URL', await page.getByRole('tab', { name: 'Join with code' }).getAttribute('aria-selected') === 'true')
 await page.getByPlaceholder('Scout Sam').fill('Pal')
+await page.getByRole('button', { name: /Join friends/ }).click()
+await page.waitForSelector('.camp-grid')
+ok('Join via share pack', (await page.locator('h1').innerText()) === 'Fern Ridge')
+
+await page.getByRole('button', { name: 'New camp' }).click()
+await page.waitForSelector('.welcome-shell')
+await page.getByRole('tab', { name: 'Join with code' }).click()
+await page.getByPlaceholder('Scout Sam').fill('Demo')
 await page.getByPlaceholder('CREST-DEMO').fill('CREST-DEMO')
 await page.getByRole('button', { name: /Join friends/ }).click()
 await page.waitForSelector('.camp-grid')
